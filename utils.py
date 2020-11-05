@@ -28,6 +28,8 @@ def load_data_set():
     """
     return x, y
 
+x, y = load_data_set()
+
 def r_squared(y, y_hat):
     y_bar = y.mean()
     ss_tot = ((y-y_bar)**2).sum()
@@ -52,7 +54,7 @@ def random_solution(d):
         else:
             a.append(0)
 
-    return a
+    return np.array(a)
 
 def global_random_search(x, y, d, M, p):
     best = random_solution(d)
@@ -83,3 +85,79 @@ def global_random_search(x, y, d, M, p):
             break
             
     return best_1, best_2, best_3
+
+def error_squared(f):
+    y_hat = np.poly1d(f)(x)
+    ss_res = ((y-y_hat)**2).sum()
+    return ss_res
+
+def error(f, error_squared):
+    y_hat = np.poly1d(f)(x)
+
+    if error_squared:
+        ss_res = ((y-y_hat)**2).sum()
+    else:
+        ss_res = (np.abs(y-y_hat)).sum()
+    return ss_res
+
+def select(population):
+    return population[random.randint(0, len(population)-1)]
+
+def selection(population, error_squared):
+    selected = []
+
+    for i in range(len(population)):
+        first = select(population)
+        second = select(population)
+
+        if error(first, error_squared) < error(second, error_squared):
+            selected.append(first)
+        else:
+            selected.append(second)
+
+    return selected
+
+def crossover(selection, error_squared):
+    offspring = []
+
+    for i in range(0, len(selection), 2):
+        first = selection[i]
+        second = selection[i+1]
+
+        if random.random() <= 0.86:
+            x_1 = first + second
+            x_2 = 1.005*first - 0.005*second
+            x_3 = -0.005*first + 1.005*second
+
+            e_x_1 = error(x_1, error_squared)
+            e_x_2 = error(x_2, error_squared)
+            e_x_3 = error(x_3, error_squared)
+
+            best_1 = None
+            best_2 = None
+            if e_x_1 > e_x_2 and e_x_1 > e_x_3:
+                best_1 = x_2
+                best_2 = x_3
+
+            if e_x_2 > e_x_1 and e_x_2 > e_x_3:
+                best_1 = x_1
+                best_2 = x_3
+
+            if e_x_3 > e_x_1 and e_x_3 > e_x_2:
+                best_1 = x_1
+                best_2 = x_2
+
+            offspring.append(best_1)
+            offspring.append(best_2)
+        else:
+            offspring.append(first)
+            offspring.append(second)
+
+    return offspring
+
+def mutation(offspring, error_squared):
+    for i in range(len(offspring)):
+        if random.random() <= 0.05:
+            offspring[i] = offspring[i] + 1.0005 * random_solution(10)
+
+    return offspring
